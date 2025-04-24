@@ -4,6 +4,11 @@
 @author: mabbas10
 """
 
+from collections import defaultdict
+from network_classes import Network
+from demand_classes import DemandSet
+from recursive_logit import RecursiveLogitModel
+
 class RLStaticAssigner:
     """
     Given a RL model (which can compute choice probabilities) and a set of demands,

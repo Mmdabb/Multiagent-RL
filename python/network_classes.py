@@ -6,6 +6,7 @@
 
 import csv
 import math
+import networkx as nx
 from collections import defaultdict, deque
 
 class Node:
@@ -98,3 +99,10 @@ class Network:
         return self.incoming_links[start_node]
 
     # Potential helper for building a 'dummy' destination link, etc.
+
+    def to_networkx(self):
+        G = nx.DiGraph()
+        for link in self.links.values():
+            G.add_edge(link.start_node, link.end_node, id=link.link_id,
+                       travel_time=link.attributes.get('travel_time', 1.0))
+        return G
