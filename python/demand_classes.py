@@ -5,10 +5,13 @@
 """
 
 class DemandRecord:
-    def __init__(self, origin_link_id, destination_link_id, volume):
+    def __init__(self, origin_link_id, destination_link_id, volume, origin_zone=None, destination_zone=None):
         self.origin_link_id = origin_link_id
         self.destination_link_id = destination_link_id
         self.volume = volume
+        self.origin_zone = origin_zone
+        self.destination_zone = destination_zone
+
 
 class DemandSet:
     """
@@ -18,5 +21,6 @@ class DemandSet:
     def __init__(self):
         self.demands = []  # list of DemandRecord
     
-    def add_demand(self, origin_link, dest_link, volume):
-        self.demands.append(DemandRecord(origin_link, dest_link, volume))
+    def add_demand(self, origin_link, dest_link, volume, origin_zone=None, destination_zone=None):
+        self.demands.append(DemandRecord(origin_link, dest_link, volume, origin_zone, destination_zone))
+
