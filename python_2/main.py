@@ -1,26 +1,18 @@
-# main.py
 import os
+import matplotlib.pyplot as plt
+import numpy as np
+from config import *
 from network_loader import load_network
 from demand_loader import load_demand
 from value_function_solver import solve_value_function
-# from multi_agent_rollout import multi_agent_rollout
 from stochastic_multi_agent_rollout import multi_agent_rollout
 from travel_time_updater import update_link_travel_times
 from results_exporter import export_agent_results, export_link_performance
 from gap_function import compute_max_path_gap
 from helper_functions import aggregate_agent_link_flows
 
+
 def main():
-    # File paths
-    data_path = "../data_sets/toy"
-    node_file = os.path.join(data_path, "node.csv")
-    link_file = os.path.join(data_path, "link.csv")
-    demand_file = os.path.join(data_path, "demand.csv")
-
-    agent_result_file = os.path.join(data_path, 'agent_result.csv')
-    link_performance_file = os.path.join(data_path, 'link_performance.csv')
-    agent_link_flow_output = "../data_sets/toy/agent_implied_link_flow.csv"
-
     # Load network and demand
     G = load_network(node_file, link_file)
     agents, destination_zones = load_demand(demand_file)
@@ -29,9 +21,7 @@ def main():
     for u, v, attr in G.edges(data=True):
         attr['current_travel_time'] = attr['free_flow_travel_time']
 
-    max_outer_iterations = 200  # You can increase a bit since convergence will be smoother
-    convergence_threshold = 1e-3  # Threshold for max flow change
-
+    system_travel_time_history = []
     last_link_flows = None
 
     for outer_iter in range(max_outer_iterations):
@@ -48,8 +38,6 @@ def main():
         agent_paths, new_link_flows = multi_agent_rollout(G, agents, value_function_dict, mu=0.1, random_seed=42)
 
         # Step 3: Relaxation (flow averaging)
-        use_msa = True
-
         if last_link_flows is None:
             relaxed_link_flows = new_link_flows.copy()
         else:
@@ -67,6 +55,12 @@ def main():
 
         # Step 4: Update travel times using relaxed flows (BPR)
         update_link_travel_times(G, relaxed_link_flows)
+
+        total_system_tt = sum(
+            attr['current_travel_time'] * new_link_flows.get(attr['link_id'], 0)
+            for _, _, attr in G.edges(data=True)
+        )
+        system_travel_time_history.append(total_system_tt)
 
         # Step 5: Convergence checking
         if last_link_flows is not None:
@@ -90,6 +84,8 @@ def main():
     export_agent_results(agent_paths, agent_result_file)
     export_link_performance(G, new_link_flows, link_performance_file)
     aggregate_agent_link_flows(agent_result_file, agent_link_flow_output)
+
+    np.savetxt(os.path.join(data_path, "multiagent_system_travel_time.csv"), system_travel_time_history, delimiter=",")
 
 
 if __name__ == "__main__":
