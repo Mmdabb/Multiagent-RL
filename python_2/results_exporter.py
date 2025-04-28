@@ -31,7 +31,8 @@ def export_link_performance(G, link_flows: dict, output_file: str):
     for u, v, attr in G.edges(data=True):
         link_id = attr['link_id']
         flow = link_flows.get(link_id, 0)
-        travel_time = attr['free_flow_travel_time']  # still using free flow for now
+        # travel_time = attr['free_flow_travel_time']  # still using free flow for now
+        travel_time = attr.get('current_travel_time', attr['free_flow_travel_time'])
 
         records.append({
             'link_id': link_id,

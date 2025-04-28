@@ -33,7 +33,7 @@ def load_network(node_file: str, link_file: str):
     # Add links
     for _, row in link_df.iterrows():
         total_capacity = row['lanes'] * row['capacity']
-        free_flow_travel_time = (row['length'] / row['free_speed']) * 60  # minutes
+        free_flow_travel_time = (row['length'] / row['free_speed']) * 60 / 1000  # minutes
 
         G.add_edge(row['from_node_id'], row['to_node_id'],
                    link_id=row['link_id'],
