@@ -3,10 +3,12 @@ import os
 from network_loader import load_network
 from demand_loader import load_demand
 from value_function_solver import solve_value_function
-from multi_agent_rollout import multi_agent_rollout
+# from multi_agent_rollout import multi_agent_rollout
+from stochastic_multi_agent_rollout import multi_agent_rollout
 from travel_time_updater import update_link_travel_times
 from results_exporter import export_agent_results, export_link_performance
 from gap_function import compute_max_path_gap
+from helper_functions import aggregate_agent_link_flows
 
 def main():
     # File paths
@@ -17,6 +19,7 @@ def main():
 
     agent_result_file = os.path.join(data_path, 'agent_result.csv')
     link_performance_file = os.path.join(data_path, 'link_performance.csv')
+    agent_link_flow_output = "../data_sets/toy/agent_implied_link_flow.csv"
 
     # Load network and demand
     G = load_network(node_file, link_file)
@@ -26,7 +29,7 @@ def main():
     for u, v, attr in G.edges(data=True):
         attr['current_travel_time'] = attr['free_flow_travel_time']
 
-    max_outer_iterations = 50  # You can increase a bit since convergence will be smoother
+    max_outer_iterations = 200  # You can increase a bit since convergence will be smoother
     convergence_threshold = 1e-3  # Threshold for max flow change
 
     last_link_flows = None
@@ -41,14 +44,20 @@ def main():
             value_function_dict[dest_zone] = value_function
 
         # Step 2: Multi-agent rollout based on current value functions
-        agent_paths, new_link_flows = multi_agent_rollout(G, agents, value_function_dict)
+        # agent_paths, new_link_flows = multi_agent_rollout(G, agents, value_function_dict)
+        agent_paths, new_link_flows = multi_agent_rollout(G, agents, value_function_dict, mu=0.1, random_seed=42)
 
         # Step 3: Relaxation (flow averaging)
+        use_msa = True
+
         if last_link_flows is None:
-            # First iteration: use new flows directly
             relaxed_link_flows = new_link_flows.copy()
         else:
-            lambda_relax = 1.0 / (outer_iter + 1)  # MSA relaxation
+            if use_msa:
+                lambda_relax = 1.0 / (outer_iter + 1)  # MSA relaxation
+            else:
+                lambda_relax = 1.0  # NO relaxation (fully update to new flow)
+
             relaxed_link_flows = {}
             for link_id in new_link_flows.keys():
                 old_flow = last_link_flows.get(link_id, 0)
@@ -79,7 +88,9 @@ def main():
 
     # Final step: Export final results
     export_agent_results(agent_paths, agent_result_file)
-    export_link_performance(G, relaxed_link_flows, link_performance_file)
+    export_link_performance(G, new_link_flows, link_performance_file)
+    aggregate_agent_link_flows(agent_result_file, agent_link_flow_output)
+
 
 if __name__ == "__main__":
     main()
