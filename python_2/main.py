@@ -6,6 +6,7 @@ from value_function_solver import solve_value_function
 from multi_agent_rollout import multi_agent_rollout
 from travel_time_updater import update_link_travel_times
 from results_exporter import export_agent_results, export_link_performance
+from gap_function import compute_max_path_gap
 
 def main():
     # File paths
@@ -72,6 +73,9 @@ def main():
 
         # Update last_link_flows for next iteration
         last_link_flows = relaxed_link_flows.copy()
+        # Compute UE condition
+        max_gap, avg_gap = compute_max_path_gap(G, agent_paths)
+        print(f"Max Path Gap: {max_gap:.6f} minutes, Avg Path Gap: {avg_gap:.6f} minutes")
 
     # Final step: Export final results
     export_agent_results(agent_paths, agent_result_file)

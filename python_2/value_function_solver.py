@@ -46,7 +46,7 @@ def solve_value_function(G: nx.DiGraph, destination_zone: int, mu: float = 1.0):
             if node == destination_node:
                 continue
 
-            print(f"Node {node}: outgoing successors: {[succ for _, succ in G.out_edges(node)]}")
+            # print(f"Node {node}: outgoing successors: {[succ for _, succ in G.out_edges(node)]}")
             scores = []
             for _, successor, attr in G.out_edges(node, data=True):
                 # link_cost = attr['free_flow_travel_time']
@@ -54,7 +54,7 @@ def solve_value_function(G: nx.DiGraph, destination_zone: int, mu: float = 1.0):
                 utility = -link_cost
                 total_score = utility + value_function[successor]
                 scores.append(total_score / mu)
-                print(f"Node {node}; to node:{successor}; link_id:{attr.get('link_id')}; link cost:{link_cost:.4f}; value function successor: {value_function[successor]:.4f}")
+                # print(f"Node {node}; to node:{successor}; link_id:{attr.get('link_id')}; link cost:{link_cost:.4f}; value function successor: {value_function[successor]:.4f}")
 
 
             # print()
@@ -65,8 +65,6 @@ def solve_value_function(G: nx.DiGraph, destination_zone: int, mu: float = 1.0):
 
             delta = max(delta, abs(updated_value[node] - value_function[node]))
             # print(f"Node {node}: outgoing successors: {[succ for _, succ in G.out_edges(node)]}")
-            if node == 2:
-                print(f"iteration: {iteration}; node:{node}; value_function: {updated_value[node]}; scores: {scores}")
 
         value_function = updated_value
 
