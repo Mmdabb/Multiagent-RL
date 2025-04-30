@@ -1,14 +1,16 @@
 
 # ==== Simulation Control Parameters ====
-max_outer_iterations = 50
+max_outer_iterations = 20
 convergence_threshold = 1e-3
 
 # ==== Agent Rollout Settings ====
-use_stochastic = True
 mu_start = 0.3         # Initial μ (more exploration)
 mu_end = 0.05          # Final μ (more greedy)
 mu_decay_iter = 100    # Over how many iterations to decay μ
+
 random_seed = 42
+mu = 0.3
+greedy = False
 
 # ==== Flow Relaxation Settings (MSA) ====
 use_msa = True

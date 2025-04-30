@@ -1,14 +1,17 @@
 import os
 import numpy as np
-import matplotlib.pyplot as plt
+import pandas as pd
 import networkx as nx
 from config import *
 from network_loader import load_network
 from demand_loader import load_demand
-from travel_time_updater import update_link_travel_times
+from utils import update_link_travel_times
+import time
 
 def main():
     # Load network and demand
+    start_time = time.time()
+
     G = load_network(node_file, link_file)
     agents, destination_zones = load_demand(demand_file)
 
@@ -66,7 +69,53 @@ def main():
         )
         system_travel_time_history.append(total_system_tt)
 
+
+
         last_link_flows = relaxed_link_flows.copy()
+
+        # Convergence check (max flow change)
+        # if last_link_flows is not None:
+        #     max_flow_change = max(
+        #         abs(relaxed_link_flows[link_id] - last_link_flows.get(link_id, 0))
+        #         for link_id in relaxed_link_flows
+        #     )
+        #     print(f"Max link flow change: {max_flow_change:.6f}")
+        #     if max_flow_change < 1e-4:
+        #         print(f"Converged after {outer_iter + 1} iterations (flow change)")
+        #         break
+
+        # Optional: relative gap in total travel time
+        if outer_iter > 0:
+            rel_gap = abs(system_travel_time_history[-1] - system_travel_time_history[-2]) / system_travel_time_history[
+                -2]
+            print(f"Relative system travel time gap: {rel_gap:.6f}")
+            if rel_gap < 1e-3:
+                print(f"Converged after {outer_iter + 1} iterations (relative gap)")
+                break
+
+    end_time = time.time()
+    print(f"Computation time: {end_time - start_time:.4f} seconds")
+
+    records = []
+    for u, v, attr in G.edges(data=True):
+        link_id = attr['link_id']
+        flow = last_link_flows.get(link_id, 0)
+        # travel_time = attr['free_flow_travel_time']  # still using free flow for now
+        travel_time = attr.get('current_travel_time', attr['free_flow_travel_time'])
+
+        records.append({
+            'link_id': link_id,
+            'from_node_id': u,
+            'to_node_id': v,
+            'flow': flow,
+            'travel_time': travel_time,
+            'free_flow_travel_time': attr['free_flow_travel_time']
+        })
+
+    df_link_performance = pd.DataFrame(records)
+    # df_link_performance.sort_values(by='link_id', ascending=True)
+
+    df_link_performance.to_csv(os.path.join(data_path, "UE_linkperformance.csv"), index=False)
 
     # Save static assignment history
     np.savetxt(os.path.join(data_path, "static_ue_system_travel_time.csv"), system_travel_time_history, delimiter=",")
